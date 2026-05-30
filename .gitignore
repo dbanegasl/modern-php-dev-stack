@@ -16,6 +16,7 @@ xampp8-docker-ref/
 # macOS system files
 .DS_Store
 
-# Ignore all source code in the src folder except the placeholder .gitkeep
+# Ignore all source code in the src folder except the placeholder .gitkeep and index.php
 src/*
 !src/.gitkeep
+!src/index.php
