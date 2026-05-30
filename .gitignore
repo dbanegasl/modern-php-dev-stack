@@ -1,0 +1,17 @@
+# Local environment and secret files
+.env
+.secrets/
+
+# Database data persistence
+/docker/mariadb/data/
+db-data/
+
+# Application and service logs
+*.log
+docker/php/logs/
+
+# Temporary reference clone
+xampp8-docker-ref/
+
+# macOS system files
+.DS_Store

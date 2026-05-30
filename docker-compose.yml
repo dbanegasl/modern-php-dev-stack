@@ -1,0 +1,162 @@
+# ==============================================================================
+# Modern PHP & Web Development Orchestration (Docker Compose with HTTPS Support)
+# ==============================================================================
+
+services:
+  # ----------------------------------------------------------------------------
+  # PHP-FPM Service (Central PHP engine)
+  # ----------------------------------------------------------------------------
+  php:
+    build:
+      context: ./docker/php
+      args:
+        PHP_VERSION: ${PHP_VERSION}
+    container_name: modern-php-fpm
+    restart: always
+    volumes:
+      - ./src:/var/www/html
+    environment:
+      # Inject database parameters
+      DB_HOST: db
+      DB_DATABASE: ${MARIADB_DATABASE}
+      DB_USER: ${MARIADB_USER}
+      DB_PASSWORD_FILE: /run/secrets/db_password
+      XDEBUG_MODE: ${XDEBUG_MODE}
+    secrets:
+      - db_password
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - app-net
+
+  # ----------------------------------------------------------------------------
+  # Nginx Service (Supports HTTP on 8801 and HTTPS on 8811)
+  # ----------------------------------------------------------------------------
+  nginx:
+    image: nginx:alpine
+    container_name: modern-nginx
+    restart: always
+    ports:
+      - "${PORT_NGINX}:80"
+      - "${PORT_NGINX_HTTPS}:443"
+    volumes:
+      - ./src:/var/www/html
+      - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./docker/ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - php
+    networks:
+      - app-net
+
+  # ----------------------------------------------------------------------------
+  # Apache Service (Supports HTTP on 8802 and HTTPS on 8812)
+  # ----------------------------------------------------------------------------
+  apache:
+    image: httpd:2.4-alpine
+    container_name: modern-apache
+    restart: always
+    ports:
+      - "${PORT_APACHE}:80"
+      - "${PORT_APACHE_HTTPS}:443"
+    volumes:
+      - ./src:/var/www/html
+      - ./docker/apache/httpd.conf:/usr/local/apache2/conf/httpd.conf:ro
+      - ./docker/ssl:/usr/local/apache2/conf/ssl:ro
+    depends_on:
+      - php
+    networks:
+      - app-net
+
+  # ----------------------------------------------------------------------------
+  # MariaDB Service (Exclusive port 8803)
+  # ----------------------------------------------------------------------------
+  db:
+    image: mariadb:11.5
+    container_name: modern-db
+    restart: always
+    ports:
+      - "${PORT_MARIADB}:3306"
+    environment:
+      # Read credentials securely from mounted Docker Secrets
+      MARIADB_ROOT_PASSWORD_FILE: /run/secrets/db_root_password
+      MARIADB_DATABASE: ${MARIADB_DATABASE}
+      MARIADB_USER: ${MARIADB_USER}
+      MARIADB_PASSWORD_FILE: /run/secrets/db_password
+    secrets:
+      - db_root_password
+      - db_password
+    volumes:
+      - db-data:/var/lib/mysql
+    networks:
+      - app-net
+
+  # ----------------------------------------------------------------------------
+  # phpMyAdmin Service (Exclusive port 8804)
+  # ----------------------------------------------------------------------------
+  phpmyadmin:
+    image: phpmyadmin:latest
+    container_name: modern-phpmyadmin
+    restart: always
+    ports:
+      - "${PORT_PHPMYADMIN}:80"
+    environment:
+      PMA_HOST: db
+      PMA_PORT: 3306
+      PMA_USER: ${MARIADB_USER}
+      PMA_PASSWORD_FILE: /run/secrets/db_password
+    secrets:
+      - db_password
+    depends_on:
+      - db
+    networks:
+      - app-net
+
+  # ----------------------------------------------------------------------------
+  # Mailpit Service (Exclusive port 8805 & SMTP on 8825)
+  # ----------------------------------------------------------------------------
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: modern-mailpit
+    restart: always
+    ports:
+      - "${PORT_MAILPIT}:8025"      # Web interface
+      - "${PORT_MAILPIT_SMTP}:1025"  # SMTP Port
+    networks:
+      - app-net
+
+  # ----------------------------------------------------------------------------
+  # Node.js Service (For compiling frontend assets: Vite, Webpack, npm, etc.)
+  # ----------------------------------------------------------------------------
+  node:
+    image: node:20-alpine
+    container_name: modern-node
+    restart: always
+    working_dir: /var/www/html
+    volumes:
+      - ./src:/var/www/html
+    ports:
+      - "5173:5173"                 # Exposes Vite's hot-reload dev server
+    command: "tail -f /dev/null"    # Keeps the container running in the background
+    networks:
+      - app-net
+
+# ==============================================================================
+# Persistent Volumes & Networks
+# ==============================================================================
+volumes:
+  db-data:
+    name: modern-xampp-db-data
+
+networks:
+  app-net:
+    name: modern-xampp-net
+    driver: bridge
+
+# ==============================================================================
+# Docker Secrets Definition
+# ==============================================================================
+secrets:
+  db_root_password:
+    file: .secrets/db_root_password.txt
+  db_password:
+    file: .secrets/db_password.txt
