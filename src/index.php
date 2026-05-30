@@ -42,7 +42,7 @@ if ($db_password === null) {
             PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
             PDO::ATTR_TIMEOUT => 3,
         ]);
-        $db_status_pdo = 'Connected successfully';
+        $db_status_pdo = 'Connected';
         
         // Dynamically fetch active database server version
         $mariadb_version = $pdo->query('SELECT @@version')->fetchColumn();
@@ -60,7 +60,7 @@ if ($db_password === null) {
         if ($conn->connect_error) {
             throw new Exception($conn->connect_error);
         }
-        $db_status_mysqli = 'Connected successfully';
+        $db_status_mysqli = 'Connected';
         $conn->close();
     } catch (Exception $e) {
         $db_status_mysqli = 'Failed';
@@ -122,15 +122,15 @@ if (is_dir($dir)) {
     <title>Modern PHP Dev Suite Dashboard</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg-primary: #080c14;
-            --bg-card: rgba(15, 23, 42, 0.65);
+            --bg-primary: #060911;
+            --bg-card: rgba(13, 20, 35, 0.65);
             --border-color: rgba(255, 255, 255, 0.08);
             --accent-glow: linear-gradient(135deg, #6366f1 0%, #a855f7 50%, #ec4899 100%);
             --text-main: #f3f4f6;
-            --text-muted: #9ca3af;
+            --text-muted: #8e96a3;
             --status-success: #10b981;
             --status-error: #ef4444;
             --status-warning: #f59e0b;
@@ -156,12 +156,12 @@ if (is_dir($dir)) {
         body::before, body::after {
             content: '';
             position: absolute;
-            width: 450px;
-            height: 450px;
+            width: 350px;
+            height: 350px;
             border-radius: 50%;
             background: var(--accent-glow);
             filter: blur(140px);
-            opacity: 0.12;
+            opacity: 0.1;
             z-index: -1;
         }
         body::before {
@@ -169,22 +169,23 @@ if (is_dir($dir)) {
             left: -100px;
         }
         body::after {
-            bottom: 200px;
+            bottom: 100px;
             right: -100px;
         }
 
         /* Top System Status Bar */
         .system-top-bar {
-            background: rgba(10, 15, 30, 0.8);
+            background: rgba(8, 12, 22, 0.85);
             backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
             border-bottom: 1px solid var(--border-color);
-            padding: 0.75rem 2rem;
+            padding: 0.6rem 2rem;
             display: flex;
             justify-content: space-between;
             align-items: center;
             flex-wrap: wrap;
             gap: 1rem;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             position: sticky;
             top: 0;
             z-index: 100;
@@ -209,81 +210,77 @@ if (is_dir($dir)) {
             font-weight: 600;
         }
 
-        /* Main Container */
+        /* Main Wrapper */
         .main-wrapper {
-            max-width: 1000px;
-            margin: 2rem auto;
+            max-width: 960px;
+            margin: 1.5rem auto;
             padding: 0 1.5rem;
         }
 
-        /* Main Header Card */
-        .header-card {
-            background: var(--bg-card);
-            border: 1px solid var(--border-color);
-            border-radius: 24px;
-            padding: 2.5rem;
-            margin-bottom: 2rem;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.4);
-            text-align: center;
-            position: relative;
-            overflow: hidden;
+        /* Clean Header Layout (No heavy card) */
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+            gap: 1rem;
         }
 
-        .header-card h1 {
-            font-size: 2.4rem;
+        .page-title h1 {
+            font-size: 1.8rem;
             font-weight: 700;
             background: var(--accent-glow);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            margin-bottom: 0.5rem;
+            letter-spacing: -0.5px;
         }
 
-        .header-card p {
+        .page-title p {
             color: var(--text-muted);
-            font-size: 1.1rem;
+            font-size: 0.9rem;
             font-weight: 300;
-            margin-bottom: 1.5rem;
+            margin-top: 0.2rem;
         }
 
-        /* Floating Toolbar */
-        .toolbar-group {
+        /* Compact Toolbar */
+        .toolbar {
             display: flex;
-            justify-content: center;
-            gap: 0.75rem;
-            flex-wrap: wrap;
+            gap: 0.5rem;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--border-color);
+            padding: 0.35rem;
+            border-radius: 12px;
         }
 
         .toolbar-btn {
             display: inline-flex;
             align-items: center;
-            gap: 0.5rem;
-            background: rgba(255, 255, 255, 0.04);
-            border: 1px solid var(--border-color);
+            background: transparent;
+            border: none;
             color: var(--text-main);
-            padding: 0.6rem 1.2rem;
-            border-radius: 12px;
+            padding: 0.4rem 0.8rem;
+            border-radius: 8px;
             text-decoration: none;
-            font-size: 0.9rem;
-            font-weight: 600;
+            font-size: 0.85rem;
+            font-weight: 500;
             transition: all 0.2s ease;
         }
 
         .toolbar-btn:hover {
-            background: rgba(255, 255, 255, 0.1);
-            transform: translateY(-2px);
-            border-color: rgba(99, 102, 241, 0.4);
-            box-shadow: 0 5px 15px rgba(99, 102, 241, 0.15);
+            background: rgba(255, 255, 255, 0.05);
+            color: #818cf8;
         }
 
         /* Tabs Interface */
         .tabs-header {
             display: flex;
-            background: rgba(10, 15, 30, 0.5);
+            background: rgba(10, 15, 30, 0.4);
             border: 1px solid var(--border-color);
-            border-radius: 16px;
-            padding: 0.4rem;
-            margin-bottom: 2rem;
-            gap: 0.25rem;
+            border-radius: 14px;
+            padding: 0.3rem;
+            margin-bottom: 1.5rem;
+            gap: 0.2rem;
         }
 
         .tab-trigger {
@@ -291,33 +288,32 @@ if (is_dir($dir)) {
             background: transparent;
             border: none;
             color: var(--text-muted);
-            padding: 0.8rem 1rem;
-            border-radius: 12px;
+            padding: 0.6rem 1rem;
+            border-radius: 10px;
             cursor: pointer;
             font-family: inherit;
             font-weight: 600;
-            font-size: 1rem;
+            font-size: 0.9rem;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 0.5rem;
+            gap: 0.4rem;
             transition: all 0.2s ease;
         }
 
         .tab-trigger:hover {
             color: var(--text-main);
-            background: rgba(255, 255, 255, 0.02);
         }
 
         .tab-trigger.active {
             color: #ffffff;
             background: linear-gradient(135deg, #6366f1, #a855f7);
-            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.25);
         }
 
         .tab-content {
             display: none;
-            animation: fadeIn 0.4s ease-out;
+            animation: fadeIn 0.3s ease-out;
         }
 
         .tab-content.active {
@@ -325,211 +321,197 @@ if (is_dir($dir)) {
         }
 
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
+            from { opacity: 0; transform: translateY(5px); }
             to { opacity: 1; transform: translateY(0); }
         }
 
-        /* Container Cards */
+        /* Compact Containers */
         .section-card {
             background: var(--bg-card);
             border: 1px solid var(--border-color);
-            border-radius: 24px;
-            padding: 2.5rem;
-            box-shadow: 0 15px 35px rgba(0,0,0,0.3);
+            border-radius: 20px;
+            padding: 1.5rem;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
             backdrop-filter: blur(16px);
             -webkit-backdrop-filter: blur(16px);
         }
 
-        .section-title {
-            font-size: 1.4rem;
-            font-weight: 700;
-            margin-bottom: 1.5rem;
-            border-left: 4px solid #818cf8;
-            padding-left: 0.75rem;
-        }
-
-        /* Projects Tab Grid */
-        .projects-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-            gap: 1.5rem;
-        }
-
-        .project-card {
-            background: rgba(255, 255, 255, 0.02);
+        /* Finder-Style List View (Projects Tab) */
+        .finder-container {
             border: 1px solid var(--border-color);
-            border-radius: 20px;
-            padding: 1.5rem;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            min-height: 180px;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border-radius: 14px;
+            overflow: hidden;
+            background: rgba(0, 0, 0, 0.15);
+            margin-top: 1rem;
         }
 
-        .project-card:hover {
-            transform: translateY(-5px);
-            background: rgba(255, 255, 255, 0.04);
-            border-color: rgba(255, 255, 255, 0.15);
-            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+        .finder-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
         }
 
-        .project-header {
-            display: flex;
-            align-items: flex-start;
-            justify-content: space-between;
-            margin-bottom: 1rem;
+        .finder-table th {
+            text-align: left;
+            background: rgba(255, 255, 255, 0.02);
+            border-bottom: 1px solid var(--border-color);
+            color: var(--text-muted);
+            font-weight: 600;
+            padding: 0.6rem 1rem;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
-        .project-icon-group {
+        .finder-table td {
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+            vertical-align: middle;
+        }
+
+        .finder-row {
+            transition: background 0.15s ease;
+        }
+
+        .finder-row:hover {
+            background: rgba(255, 255, 255, 0.015);
+        }
+
+        .finder-row:last-child td {
+            border-bottom: none;
+        }
+
+        .finder-folder {
             display: flex;
             align-items: center;
-            gap: 0.5rem;
+            gap: 0.6rem;
+            font-weight: 500;
         }
 
-        .project-folder-icon {
-            font-size: 1.8rem;
+        .finder-folder-icon {
+            font-size: 1.3rem;
         }
 
-        .project-badges {
+        .finder-name {
+            color: var(--text-main);
+            text-decoration: none;
+            transition: color 0.15s ease;
+        }
+
+        .finder-name:hover {
+            color: #818cf8;
+        }
+
+        .badge-pill {
+            display: inline-flex;
+            font-size: 0.65rem;
+            font-weight: 600;
+            padding: 0.15rem 0.4rem;
+            border-radius: 4px;
+            margin-right: 0.3rem;
+        }
+
+        .badge-git {
+            background: rgba(240, 80, 51, 0.12);
+            border: 1px solid rgba(240, 80, 51, 0.25);
+            color: #f05033;
+        }
+
+        .badge-vscode {
+            background: rgba(0, 122, 204, 0.12);
+            border: 1px solid rgba(0, 122, 204, 0.25);
+            color: #38bdf8;
+        }
+
+        .finder-date {
+            color: var(--text-muted);
+            font-size: 0.8rem;
+        }
+
+        /* Compact Action Pills */
+        .launch-group {
             display: flex;
             gap: 0.4rem;
         }
 
-        .badge-git {
-            background: rgba(240, 80, 51, 0.15);
-            border: 1px solid rgba(240, 80, 51, 0.3);
-            color: #f05033;
-            font-size: 0.7rem;
-            padding: 0.2rem 0.5rem;
-            border-radius: 4px;
-            font-weight: 600;
-        }
-
-        .badge-vscode {
-            background: rgba(0, 122, 204, 0.15);
-            border: 1px solid rgba(0, 122, 204, 0.3);
-            color: #007acc;
-            font-size: 0.7rem;
-            padding: 0.2rem 0.5rem;
-            border-radius: 4px;
-            font-weight: 600;
-        }
-
-        .project-name {
-            font-size: 1.15rem;
-            font-weight: 600;
-            color: var(--text-main);
-            word-break: break-all;
-        }
-
-        .project-meta {
-            font-size: 0.75rem;
-            color: var(--text-muted);
-            margin-top: 0.25rem;
-        }
-
-        .project-actions {
-            margin-top: 1.5rem;
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 0.5rem;
-        }
-
-        .proj-link {
+        .launch-pill {
             display: inline-flex;
             align-items: center;
-            justify-content: center;
             gap: 0.3rem;
-            font-size: 0.8rem;
+            font-size: 0.75rem;
             font-weight: 600;
-            padding: 0.5rem;
-            border-radius: 8px;
+            padding: 0.3rem 0.6rem;
+            border-radius: 6px;
             text-decoration: none;
             transition: all 0.2s ease;
         }
 
-        .proj-nginx {
-            background: rgba(16, 185, 129, 0.1);
+        .launch-nginx {
+            background: rgba(16, 185, 129, 0.08);
             border: 1px solid rgba(16, 185, 129, 0.2);
             color: #34d399;
         }
 
-        .proj-nginx:hover {
-            background: #10b981;
-            color: white;
-            border-color: transparent;
+        .launch-nginx:hover {
+            background: rgba(16, 185, 129, 0.2);
+            transform: translateY(-1px);
         }
 
-        .proj-apache {
-            background: rgba(245, 158, 11, 0.1);
+        .launch-apache {
+            background: rgba(245, 158, 11, 0.08);
             border: 1px solid rgba(245, 158, 11, 0.2);
             color: #fbbf24;
         }
 
-        .proj-apache:hover {
-            background: #f59e0b;
-            color: white;
-            border-color: transparent;
+        .launch-apache:hover {
+            background: rgba(245, 158, 11, 0.2);
+            transform: translateY(-1px);
         }
 
         .no-projects {
-            grid-column: 1 / -1;
             text-align: center;
-            padding: 3rem;
-            border: 1px dashed var(--border-color);
-            border-radius: 20px;
+            padding: 2.5rem;
             color: var(--text-muted);
+            font-weight: 300;
         }
 
         /* Diagnostics Tab Styles */
         .diag-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 1.5rem;
-            margin-bottom: 2rem;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 1.2rem;
+            margin-bottom: 1.5rem;
         }
 
         .diag-card {
             background: rgba(255, 255, 255, 0.02);
             border: 1px solid var(--border-color);
-            border-radius: 16px;
-            padding: 1.5rem;
+            border-radius: 12px;
+            padding: 1rem 1.25rem;
         }
 
         .diag-card-title {
-            font-size: 0.8rem;
+            font-size: 0.75rem;
             font-weight: 600;
             text-transform: uppercase;
-            letter-spacing: 1px;
+            letter-spacing: 0.5px;
             color: var(--text-muted);
-            margin-bottom: 0.75rem;
+            margin-bottom: 0.5rem;
         }
 
         .diag-card-value {
-            font-size: 1.35rem;
+            font-size: 1.2rem;
             font-weight: 700;
             display: flex;
             align-items: center;
-            gap: 0.5rem;
+            gap: 0.4rem;
         }
-
-        .status-dot {
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            display: inline-block;
-        }
-
-        .dot-active { background-color: var(--status-success); box-shadow: 0 0 10px var(--status-success); }
-        .dot-error { background-color: var(--status-error); box-shadow: 0 0 10px var(--status-error); }
 
         .diagnostics-endpoints {
             background: rgba(255, 255, 255, 0.01);
             border: 1px solid var(--border-color);
-            border-radius: 16px;
-            padding: 1.5rem;
-            margin-top: 1.5rem;
+            border-radius: 12px;
+            padding: 1.25rem;
         }
 
         .endpoints-grid {
@@ -548,8 +530,9 @@ if (is_dir($dir)) {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 0.5rem 0;
+            padding: 0.4rem 0;
             border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+            font-size: 0.85rem;
         }
 
         .endpoint-row:last-child {
@@ -558,81 +541,123 @@ if (is_dir($dir)) {
 
         /* Debug Tab Styles */
         .debug-instructions {
-            line-height: 1.6;
-            margin-bottom: 2rem;
+            line-height: 1.5;
+            margin-bottom: 1.5rem;
+            font-size: 0.9rem;
         }
 
         .debug-instructions ol {
-            margin-left: 1.5rem;
-            margin-top: 0.75rem;
+            margin-left: 1.25rem;
+            margin-top: 0.5rem;
             display: flex;
             flex-direction: column;
-            gap: 0.6rem;
+            gap: 0.5rem;
         }
 
         .debug-instructions code {
             background: rgba(0, 0, 0, 0.4);
             color: #f472b6;
-            padding: 0.2rem 0.5rem;
+            padding: 0.15rem 0.4rem;
             border-radius: 4px;
             font-family: monospace;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
         }
 
         .debug-tester-box {
-            background: rgba(99, 102, 241, 0.04);
-            border: 1px dashed rgba(99, 102, 241, 0.3);
-            border-radius: 16px;
-            padding: 2rem;
+            background: rgba(99, 102, 241, 0.03);
+            border: 1px dashed rgba(99, 102, 241, 0.25);
+            border-radius: 12px;
+            padding: 1.25rem;
             display: flex;
             justify-content: space-between;
             align-items: center;
             flex-wrap: wrap;
-            gap: 1.5rem;
+            gap: 1rem;
+            font-size: 0.9rem;
         }
 
         .debug-status-pill {
             display: inline-block;
-            padding: 0.4rem 0.8rem;
-            border-radius: 6px;
-            font-size: 0.85rem;
+            padding: 0.3rem 0.6rem;
+            border-radius: 5px;
+            font-size: 0.75rem;
             font-weight: 600;
-            margin-top: 0.5rem;
+            margin-top: 0.3rem;
         }
-
-        .pill-active { background: rgba(16, 185, 129, 0.15); color: var(--status-success); border: 1px solid rgba(16, 185, 129, 0.3); }
-        .pill-inactive { background: rgba(239, 68, 68, 0.15); color: var(--status-error); border: 1px solid rgba(239, 68, 68, 0.3); }
 
         .btn-trigger {
             display: inline-block;
             background: linear-gradient(90deg, #6366f1, #a855f7);
             border: none;
             color: white;
-            padding: 0.75rem 1.5rem;
-            border-radius: 8px;
+            padding: 0.6rem 1.2rem;
+            border-radius: 6px;
             font-weight: 600;
             cursor: pointer;
             text-decoration: none;
             text-align: center;
+            font-size: 0.85rem;
             transition: all 0.2s ease;
-            box-shadow: 0 4px 10px rgba(99, 102, 241, 0.3);
+            box-shadow: 0 3px 8px rgba(99, 102, 241, 0.2);
         }
 
         .btn-trigger:hover {
-            box-shadow: 0 6px 15px rgba(99, 102, 241, 0.5);
             opacity: 0.95;
-            transform: scale(1.02);
+            transform: translateY(-1px);
         }
 
         .debug-output {
-            margin-top: 1.5rem;
-            padding: 1rem;
+            margin-top: 1rem;
+            padding: 0.8rem;
             background: rgba(0, 0, 0, 0.3);
-            border-radius: 8px;
+            border-radius: 6px;
             font-family: monospace;
-            font-size: 0.85rem;
+            font-size: 0.8rem;
             color: #34d399;
-            border: 1px solid rgba(52, 211, 153, 0.2);
+            border: 1px solid rgba(52, 211, 153, 0.15);
+        }
+
+        .db-err-box {
+            grid-column: 1 / -1;
+            background: rgba(239, 68, 68, 0.05);
+            border: 1px solid rgba(239, 68, 68, 0.25);
+            color: #fca5a5;
+            padding: 0.8rem;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-family: monospace;
+        }
+
+        /* Local Pride Footer */
+        .footer {
+            text-align: center;
+            margin-top: 3rem;
+            margin-bottom: 2rem;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            font-weight: 300;
+        }
+
+        .footer-link {
+            color: #818cf8;
+            text-decoration: none;
+            font-weight: 600;
+            transition: color 0.15s ease;
+        }
+
+        .footer-link:hover {
+            color: #a855f7;
+            text-shadow: 0 0 8px rgba(168, 85, 247, 0.3);
+        }
+
+        .heart-icon {
+            color: #ef4444;
+            display: inline-block;
+            animation: beat 1.2s infinite alternate;
+        }
+
+        @keyframes beat {
+            to { transform: scale(1.15); }
         }
     </style>
 </head>
@@ -650,31 +675,27 @@ if (is_dir($dir)) {
 
     <div class="main-wrapper">
         
-        <!-- 2. Header Card -->
-        <div class="header-card">
-            <h1>Modern Developer Stack</h1>
-            <p>A fast, decoupled, microservices local suite tailored for modern web apps.</p>
+        <!-- 2. Page Header & Toolbar -->
+        <div class="page-header">
+            <div class="page-title">
+                <h1>Modern Developer Stack</h1>
+                <p>Decoupled microservices dev environment</p>
+            </div>
             
-            <div class="toolbar-group">
-                <a href="http://localhost:8804/" target="_blank" class="toolbar-btn">
-                    <span>📂 phpMyAdmin</span>
-                </a>
-                <a href="http://localhost:8805/" target="_blank" class="toolbar-btn">
-                    <span>✉️ Mailpit Panel</span>
-                </a>
-                <a href="?phpinfo=1" onclick="window.open('?phpinfo=true', 'PHPInfo', 'width=800,height=600'); return false;" class="toolbar-btn">
-                    <span>⚙️ phpinfo()</span>
-                </a>
+            <div class="toolbar">
+                <a href="http://localhost:8804/" target="_blank" class="toolbar-btn">📂 phpMyAdmin</a>
+                <a href="http://localhost:8805/" target="_blank" class="toolbar-btn">✉️ Mailpit</a>
+                <a href="?phpinfo=1" onclick="window.open('?phpinfo=true', 'PHPInfo', 'width=800,height=600'); return false;" class="toolbar-btn">⚙️ phpinfo()</a>
             </div>
         </div>
 
-        <!-- 3. Tabs Header Navigation -->
+        <!-- 3. Tabs Navigation -->
         <div class="tabs-header">
             <button class="tab-trigger active" onclick="switchTab(event, 'tab-projects')">
                 📁 My Projects (<?php echo count($projects); ?>)
             </button>
             <button class="tab-trigger" onclick="switchTab(event, 'tab-diagnostics')">
-                ⚙️ Status & Diagnostics
+                ⚙️ Diagnostics
             </button>
             <button class="tab-trigger" onclick="switchTab(event, 'tab-debug')">
                 🐛 Xdebug Guide
@@ -682,54 +703,71 @@ if (is_dir($dir)) {
         </div>
 
         <!-- =================================================================== -->
-        <!-- TAB 1: Projects Navigator -->
+        <!-- TAB 1: Projects Explorer (Finder-style) -->
         <!-- =================================================================== -->
         <div id="tab-projects" class="tab-content active">
             <div class="section-card">
-                <h2 class="section-title">First-Level Directory Projects</h2>
-                <p style="color: var(--text-muted); margin-bottom: 2rem; font-size: 0.95rem; font-weight: 300;">
-                    Below are the subfolders dynamically scanned inside your local <code>src/</code> mount. Click any server button to open the project instantly.
-                </p>
+                <div class="page-title">
+                    <h2 style="font-size: 1.25rem; font-weight: 600;">First-Level Directory Projects</h2>
+                    <p style="font-size: 0.85rem; color: var(--text-muted); font-weight: 300; margin-top: 0.15rem;">
+                        Subfolders dynamically scanned inside your local <code>src/</code> mount. Click a server pill to launch.
+                    </p>
+                </div>
                 
-                <div class="projects-grid">
+                <div class="finder-container">
                     <?php if (empty($projects)): ?>
                         <div class="no-projects">
                             📁 No subprojects found inside <code>src/</code> yet.<br>
-                            <span style="font-size: 0.9rem; font-weight: 300; display: inline-block; margin-top: 0.5rem; color: #888;">
-                                Create directories (e.g. <code>src/my-web/</code>) or clone git repos to see them listed here instantly!
+                            <span style="font-size: 0.8rem; font-weight: 300; display: inline-block; margin-top: 0.4rem; color: #777;">
+                                Create directories or clone git repos to see them listed here instantly!
                             </span>
                         </div>
                     <?php else: ?>
-                        <?php foreach ($projects as $project): ?>
-                            <div class="project-card">
-                                <div>
-                                    <div class="project-header">
-                                        <div class="project-icon-group">
-                                            <span class="project-folder-icon">📂</span>
-                                            <span class="project-name"><?php echo htmlspecialchars($project['name']); ?></span>
-                                        </div>
-                                        <div class="project-badges">
+                        <table class="finder-table">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Tags</th>
+                                    <th>Last Modified</th>
+                                    <th style="width: 170px;">Servers</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php foreach ($projects as $project): ?>
+                                    <tr class="finder-row">
+                                        <td>
+                                            <div class="finder-folder">
+                                                <span class="finder-folder-icon">📂</span>
+                                                <a href="./<?php echo urlencode($project['name']); ?>/" class="finder-name" target="_blank">
+                                                    <?php echo htmlspecialchars($project['name']); ?>
+                                                </a>
+                                            </div>
+                                        </td>
+                                        <td>
                                             <?php if ($project['is_git']): ?>
-                                                <span class="badge-git">GIT</span>
+                                                <span class="badge-pill badge-git">GIT</span>
                                             <?php endif; ?>
                                             <?php if ($project['has_vscode']): ?>
-                                                <span class="badge-vscode">VSCODE</span>
+                                                <span class="badge-pill badge-vscode">VSCODE</span>
                                             <?php endif; ?>
-                                        </div>
-                                    </div>
-                                    <div class="project-meta">Last modified: <?php echo htmlspecialchars($project['updated_time']); ?></div>
-                                </div>
-
-                                <div class="project-actions">
-                                    <a href="./<?php echo urlencode($project['name']); ?>/" class="proj-link proj-nginx" target="_blank">
-                                        ⚡ Nginx (8801)
-                                    </a>
-                                    <a href="http://localhost:8802/<?php echo urlencode($project['name']); ?>/" class="proj-link proj-apache" target="_blank">
-                                        🦅 Apache (8802)
-                                    </a>
-                                </div>
-                            </div>
-                        <?php endforeach; ?>
+                                        </td>
+                                        <td>
+                                            <span class="finder-date"><?php echo htmlspecialchars($project['updated_time']); ?></span>
+                                        </td>
+                                        <td>
+                                            <div class="launch-group">
+                                                <a href="./<?php echo urlencode($project['name']); ?>/" class="launch-pill launch-nginx" target="_blank" title="Open with Nginx">
+                                                    ⚡ Nginx
+                                                </a>
+                                                <a href="http://localhost:8802/<?php echo urlencode($project['name']); ?>/" class="launch-pill launch-apache" target="_blank" title="Open with Apache">
+                                                    🦅 Apache
+                                                </a>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
                     <?php endif; ?>
                 </div>
             </div>
@@ -740,7 +778,7 @@ if (is_dir($dir)) {
         <!-- =================================================================== -->
         <div id="tab-diagnostics" class="tab-content">
             <div class="section-card">
-                <h2 class="section-title">Environment Diagnostics</h2>
+                <h2 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 1.2rem; border-left: 3px solid #818cf8; padding-left: 0.6rem;">Environment Status</h2>
                 
                 <div class="diag-grid">
                     <!-- PHP Version -->
@@ -764,31 +802,31 @@ if (is_dir($dir)) {
                     <!-- MariaDB Connection -->
                     <div class="diag-card">
                         <div class="diag-card-title">Database Connections</div>
-                        <div style="display: flex; flex-direction: column; gap: 0.4rem; font-size: 0.95rem; font-weight: 600;">
+                        <div style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.85rem; font-weight: 600;">
                             <div>
-                                <span class="status-dot <?php echo $db_status_pdo === 'Connected successfully' ? 'dot-active' : 'dot-error'; ?>"></span>
-                                PDO Link: <?php echo htmlspecialchars($db_status_pdo); ?>
+                                <span class="status-dot <?php echo $db_status_pdo === 'Connected' ? 'dot-active' : 'dot-error'; ?>"></span>
+                                PDO: <?php echo htmlspecialchars($db_status_pdo); ?>
                             </div>
                             <div>
-                                <span class="status-dot <?php echo $db_status_mysqli === 'Connected successfully' ? 'dot-active' : 'dot-error'; ?>"></span>
-                                MySQLi Link: <?php echo htmlspecialchars($db_status_mysqli); ?>
+                                <span class="status-dot <?php echo $db_status_mysqli === 'Connected' ? 'dot-active' : 'dot-error'; ?>"></span>
+                                MySQLi: <?php echo htmlspecialchars($db_status_mysqli); ?>
                             </div>
                         </div>
                     </div>
                 </div>
 
                 <?php if (!empty($db_error)): ?>
-                    <div class="db-err-box" style="margin-bottom: 2rem;">
+                    <div class="db-err-box" style="margin-bottom: 1.5rem;">
                         🚨 <strong>Database connection reports:</strong><br>
                         <?php echo htmlspecialchars($db_error); ?>
                     </div>
                 <?php endif; ?>
 
-                <h3 class="section-title" style="font-size: 1.15rem; margin-top: 2rem;">Address Mapping</h3>
+                <h3 style="font-size: 1.05rem; font-weight: 600; margin-top: 1.5rem; margin-bottom: 0.8rem; border-left: 3px solid #818cf8; padding-left: 0.6rem;">Address Mapping</h3>
                 <div class="diagnostics-endpoints">
                     <div class="endpoints-grid">
                         <div>
-                            <h4 style="margin-bottom: 0.5rem; font-size: 0.95rem; color: #818cf8;">⚡ Nginx Local Ports</h4>
+                            <h4 style="margin-bottom: 0.4rem; font-size: 0.85rem; color: #34d399; font-weight: 600;">⚡ Nginx Local Ports</h4>
                             <div class="endpoint-row">
                                 <span>HTTP standard</span>
                                 <a href="http://localhost:8801/" target="_blank" style="color: #34d399; font-weight: 600; text-decoration: none;">http://localhost:8801</a>
@@ -799,7 +837,7 @@ if (is_dir($dir)) {
                             </div>
                         </div>
                         <div>
-                            <h4 style="margin-bottom: 0.5rem; font-size: 0.95rem; color: #fbbf24;">🦅 Apache Local Ports</h4>
+                            <h4 style="margin-bottom: 0.4rem; font-size: 0.85rem; color: #fbbf24; font-weight: 600;">🦅 Apache Local Ports</h4>
                             <div class="endpoint-row">
                                 <span>HTTP standard</span>
                                 <a href="http://localhost:8802/" target="_blank" style="color: #fbbf24; font-weight: 600; text-decoration: none;">http://localhost:8802</a>
@@ -819,7 +857,7 @@ if (is_dir($dir)) {
         <!-- =================================================================== -->
         <div id="tab-debug" class="tab-content">
             <div class="section-card">
-                <h2 class="section-title">VS Code Xdebug Step-by-Step Testing</h2>
+                <h2 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 1.2rem; border-left: 3px solid #818cf8; padding-left: 0.6rem;">VS Code Xdebug Step-by-Step Testing</h2>
                 
                 <div class="debug-instructions">
                     <p>To verify that live, interactive debugging is fully operational:</p>
@@ -849,6 +887,11 @@ if (is_dir($dir)) {
                 <?php endif; ?>
             </div>
         </div>
+
+        <!-- 4. Local Pride Footer -->
+        <footer class="footer">
+            Hecho en Cuenca con <span class="heart-icon">❤️</span> por <a href="https://duotics.com" target="_blank" class="footer-link">DUOTICS</a>
+        </footer>
 
     </div>
 
