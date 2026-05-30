@@ -10,12 +10,12 @@ It is designed to give you maximum flexibility: running **Nginx** and **Apache**
 
 ```mermaid
 graph TD
-    subgraph Host Machine (macOS / Windows / Linux)
+    subgraph "Host Machine (macOS / Windows / Linux)"
         VSCode["VS Code (Host)"]
         Browser["Web Browser (Host)"]
     end
 
-    subgraph Docker Bridge Network (modern-xampp-net)
+    subgraph "Docker Bridge Network (modern-xampp-net)"
         subgraph Web Servers
             Nginx["Nginx Container<br>HTTP Port 80 / HTTPS Port 443"]
             Apache["Apache Container<br>HTTP Port 80 / HTTPS Port 443"]
