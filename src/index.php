@@ -1,9 +1,8 @@
 <?php
 // ==============================================================================
-# Modern PHP Dev Environment - Status Dashboard & Diagnostics
+# Modern PHP Dev Environment - Premium Status Dashboard & Orchestrator
 // ==============================================================================
 
-// Error reporting settings
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
@@ -21,7 +20,7 @@ $php_version = PHP_VERSION;
 $xdebug_active = extension_loaded('xdebug');
 $xdebug_mode = ini_get('xdebug.mode');
 
-// 2. Database Connection Test
+// 2. Database Connection Test & Version Query
 $db_host = getenv('DB_HOST') ?: 'db';
 $db_name = getenv('DB_DATABASE') ?: 'my_app_db';
 $db_user = getenv('DB_USER') ?: 'my_app_user';
@@ -29,13 +28,14 @@ $db_password = get_db_password();
 
 $db_status_pdo = 'Pending';
 $db_status_mysqli = 'Pending';
+$mariadb_version = 'Offline';
 $db_error = '';
 
 if ($db_password === null) {
     $db_status_pdo = 'Error: Secret File Not Found';
     $db_status_mysqli = 'Error: Secret File Not Found';
 } else {
-    // Test PDO Connection
+    // Test PDO Connection & query MariaDB version
     try {
         $dsn = "mysql:host=$db_host;dbname=$db_name;charset=utf8mb4";
         $pdo = new PDO($dsn, $db_user, $db_password, [
@@ -43,6 +43,12 @@ if ($db_password === null) {
             PDO::ATTR_TIMEOUT => 3,
         ]);
         $db_status_pdo = 'Connected successfully';
+        
+        // Dynamically fetch active database server version
+        $mariadb_version = $pdo->query('SELECT @@version')->fetchColumn();
+        if (preg_match('/mariadb/i', $mariadb_version)) {
+            $mariadb_version = preg_replace('/-mariadb.*/i', ' (MariaDB)', $mariadb_version);
+        }
     } catch (PDOException $e) {
         $db_status_pdo = 'Failed';
         $db_error .= "PDO Error: " . $e->getMessage() . " | ";
@@ -81,9 +87,30 @@ $protocol_label = $is_https ? 'HTTPS 🔒' : 'HTTP 🔓';
 
 $web_server_name = 'Unknown';
 if (preg_match('/nginx/i', $server_software)) {
-    $web_server_name = 'Nginx (' . ($is_https ? 'Port: 8811' : 'Port: 8801') . ')';
+    $web_server_name = 'Nginx';
 } elseif (preg_match('/apache/i', $server_software) || preg_match('/httpd/i', $server_software)) {
-    $web_server_name = 'Apache (' . ($is_https ? 'Port: 8812' : 'Port: 8802') . ')';
+    $web_server_name = 'Apache';
+}
+
+// 5. Dynamic Project Directories Scanner
+$projects = [];
+$dir = __DIR__;
+if (is_dir($dir)) {
+    $files = scandir($dir);
+    foreach ($files as $file) {
+        if ($file !== '.' && $file !== '..' && is_dir($dir . '/' . $file)) {
+            // Check if there is a git repo inside the project
+            $is_git = is_dir($dir . '/' . $file . '/.git');
+            $has_vscode = is_dir($dir . '/' . $file . '/.vscode');
+            
+            $projects[] = [
+                'name' => $file,
+                'is_git' => $is_git,
+                'has_vscode' => $has_vscode,
+                'updated_time' => date('Y-m-d H:i', filemtime($dir . '/' . $file))
+            ];
+        }
+    }
 }
 
 ?>
@@ -92,14 +119,14 @@ if (preg_match('/nginx/i', $server_software)) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Modern PHP Dev Environment Dashboard</title>
+    <title>Modern PHP Dev Suite Dashboard</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg-primary: #0a0e17;
-            --bg-card: rgba(18, 26, 44, 0.6);
+            --bg-primary: #080c14;
+            --bg-card: rgba(15, 23, 42, 0.65);
             --border-color: rgba(255, 255, 255, 0.08);
             --accent-glow: linear-gradient(135deg, #6366f1 0%, #a855f7 50%, #ec4899 100%);
             --text-main: #f3f4f6;
@@ -120,10 +147,7 @@ if (preg_match('/nginx/i', $server_software)) {
             background-color: var(--bg-primary);
             color: var(--text-main);
             min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 2rem 1rem;
+            padding: 0;
             overflow-x: hidden;
             position: relative;
         }
@@ -132,12 +156,12 @@ if (preg_match('/nginx/i', $server_software)) {
         body::before, body::after {
             content: '';
             position: absolute;
-            width: 400px;
-            height: 400px;
+            width: 450px;
+            height: 450px;
             border-radius: 50%;
             background: var(--accent-glow);
-            filter: blur(120px);
-            opacity: 0.15;
+            filter: blur(140px);
+            opacity: 0.12;
             z-index: -1;
         }
         body::before {
@@ -145,107 +169,336 @@ if (preg_match('/nginx/i', $server_software)) {
             left: -100px;
         }
         body::after {
-            bottom: -100px;
+            bottom: 200px;
             right: -100px;
         }
 
-        .dashboard-container {
-            width: 100%;
-            max-width: 900px;
+        /* Top System Status Bar */
+        .system-top-bar {
+            background: rgba(10, 15, 30, 0.8);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border-color);
+            padding: 0.75rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+            font-size: 0.9rem;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .sys-info-group {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .sys-badge {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            color: var(--text-muted);
+        }
+
+        .sys-badge strong {
+            color: var(--text-main);
+            font-weight: 600;
+        }
+
+        /* Main Container */
+        .main-wrapper {
+            max-width: 1000px;
+            margin: 2rem auto;
+            padding: 0 1.5rem;
+        }
+
+        /* Main Header Card */
+        .header-card {
             background: var(--bg-card);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
             border: 1px solid var(--border-color);
             border-radius: 24px;
-            padding: 3rem;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
-            animation: fadeIn 0.8s ease-out;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        /* Header Styles */
-        .header {
+            padding: 2.5rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.4);
             text-align: center;
-            margin-bottom: 3rem;
+            position: relative;
+            overflow: hidden;
         }
 
-        .header h1 {
-            font-size: 2.5rem;
+        .header-card h1 {
+            font-size: 2.4rem;
             font-weight: 700;
             background: var(--accent-glow);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             margin-bottom: 0.5rem;
-            letter-spacing: -0.5px;
         }
 
-        .header p {
+        .header-card p {
             color: var(--text-muted);
             font-size: 1.1rem;
             font-weight: 300;
+            margin-bottom: 1.5rem;
         }
 
-        .badges-wrapper {
+        /* Floating Toolbar */
+        .toolbar-group {
             display: flex;
             justify-content: center;
             gap: 0.75rem;
-            margin-top: 1rem;
             flex-wrap: wrap;
         }
 
-        .badge-software {
+        .toolbar-btn {
             display: inline-flex;
             align-items: center;
-            background: rgba(99, 102, 241, 0.15);
-            border: 1px solid rgba(99, 102, 241, 0.3);
-            color: #818cf8;
-            padding: 0.4rem 1rem;
-            border-radius: 50px;
-            font-size: 0.85rem;
+            gap: 0.5rem;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            padding: 0.6rem 1.2rem;
+            border-radius: 12px;
+            text-decoration: none;
+            font-size: 0.9rem;
             font-weight: 600;
+            transition: all 0.2s ease;
         }
 
-        .badge-protocol {
-            display: inline-flex;
+        .toolbar-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateY(-2px);
+            border-color: rgba(99, 102, 241, 0.4);
+            box-shadow: 0 5px 15px rgba(99, 102, 241, 0.15);
+        }
+
+        /* Tabs Interface */
+        .tabs-header {
+            display: flex;
+            background: rgba(10, 15, 30, 0.5);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 0.4rem;
+            margin-bottom: 2rem;
+            gap: 0.25rem;
+        }
+
+        .tab-trigger {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            padding: 0.8rem 1rem;
+            border-radius: 12px;
+            cursor: pointer;
+            font-family: inherit;
+            font-weight: 600;
+            font-size: 1rem;
+            display: flex;
             align-items: center;
-            background: <?php echo $is_https ? 'rgba(16, 185, 129, 0.15)' : 'rgba(245, 158, 11, 0.15)'; ?>;
-            border: 1px solid <?php echo $is_https ? 'rgba(16, 185, 129, 0.3)' : 'rgba(245, 158, 11, 0.3)'; ?>;
-            color: <?php echo $is_https ? '#34d399' : '#fbbf24'; ?>;
-            padding: 0.4rem 1rem;
-            border-radius: 50px;
-            font-size: 0.85rem;
-            font-weight: 600;
+            justify-content: center;
+            gap: 0.5rem;
+            transition: all 0.2s ease;
         }
 
-        /* Status Grid */
-        .grid {
+        .tab-trigger:hover {
+            color: var(--text-main);
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .tab-trigger.active {
+            color: #ffffff;
+            background: linear-gradient(135deg, #6366f1, #a855f7);
+            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
+        }
+
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.4s ease-out;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Container Cards */
+        .section-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 24px;
+            padding: 2.5rem;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.3);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+        }
+
+        .section-title {
+            font-size: 1.4rem;
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+            border-left: 4px solid #818cf8;
+            padding-left: 0.75rem;
+        }
+
+        /* Projects Tab Grid */
+        .projects-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
             gap: 1.5rem;
-            margin-bottom: 3rem;
         }
 
-        .card {
+        .project-card {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            min-height: 180px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .project-card:hover {
+            transform: translateY(-5px);
+            background: rgba(255, 255, 255, 0.04);
+            border-color: rgba(255, 255, 255, 0.15);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+        }
+
+        .project-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+        }
+
+        .project-icon-group {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .project-folder-icon {
+            font-size: 1.8rem;
+        }
+
+        .project-badges {
+            display: flex;
+            gap: 0.4rem;
+        }
+
+        .badge-git {
+            background: rgba(240, 80, 51, 0.15);
+            border: 1px solid rgba(240, 80, 51, 0.3);
+            color: #f05033;
+            font-size: 0.7rem;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-weight: 600;
+        }
+
+        .badge-vscode {
+            background: rgba(0, 122, 204, 0.15);
+            border: 1px solid rgba(0, 122, 204, 0.3);
+            color: #007acc;
+            font-size: 0.7rem;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-weight: 600;
+        }
+
+        .project-name {
+            font-size: 1.15rem;
+            font-weight: 600;
+            color: var(--text-main);
+            word-break: break-all;
+        }
+
+        .project-meta {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-top: 0.25rem;
+        }
+
+        .project-actions {
+            margin-top: 1.5rem;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.5rem;
+        }
+
+        .proj-link {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.3rem;
+            font-size: 0.8rem;
+            font-weight: 600;
+            padding: 0.5rem;
+            border-radius: 8px;
+            text-decoration: none;
+            transition: all 0.2s ease;
+        }
+
+        .proj-nginx {
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            color: #34d399;
+        }
+
+        .proj-nginx:hover {
+            background: #10b981;
+            color: white;
+            border-color: transparent;
+        }
+
+        .proj-apache {
+            background: rgba(245, 158, 11, 0.1);
+            border: 1px solid rgba(245, 158, 11, 0.2);
+            color: #fbbf24;
+        }
+
+        .proj-apache:hover {
+            background: #f59e0b;
+            color: white;
+            border-color: transparent;
+        }
+
+        .no-projects {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 3rem;
+            border: 1px dashed var(--border-color);
+            border-radius: 20px;
+            color: var(--text-muted);
+        }
+
+        /* Diagnostics Tab Styles */
+        .diag-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .diag-card {
             background: rgba(255, 255, 255, 0.02);
             border: 1px solid var(--border-color);
             border-radius: 16px;
             padding: 1.5rem;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        .card:hover {
-            transform: translateY(-5px);
-            background: rgba(255, 255, 255, 0.04);
-            border-color: rgba(255, 255, 255, 0.15);
-            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
-        }
-
-        .card-title {
-            font-size: 0.85rem;
+        .diag-card-title {
+            font-size: 0.8rem;
             font-weight: 600;
             text-transform: uppercase;
             letter-spacing: 1px;
@@ -253,10 +506,9 @@ if (preg_match('/nginx/i', $server_software)) {
             margin-bottom: 0.75rem;
         }
 
-        .card-value {
-            font-size: 1.4rem;
+        .diag-card-value {
+            font-size: 1.35rem;
             font-weight: 700;
-            color: var(--text-main);
             display: flex;
             align-items: center;
             gap: 0.5rem;
@@ -271,82 +523,28 @@ if (preg_match('/nginx/i', $server_software)) {
 
         .dot-active { background-color: var(--status-success); box-shadow: 0 0 10px var(--status-success); }
         .dot-error { background-color: var(--status-error); box-shadow: 0 0 10px var(--status-error); }
-        .dot-warning { background-color: var(--status-warning); box-shadow: 0 0 10px var(--status-warning); }
 
-        /* Tools & Actions List */
-        .section-title {
-            font-size: 1.25rem;
-            font-weight: 600;
-            margin-bottom: 1.5rem;
-            border-left: 4px solid #818cf8;
-            padding-left: 0.75rem;
-        }
-
-        .tools-list {
-            list-style: none;
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 1rem;
-            margin-bottom: 3rem;
-        }
-
-        .tool-btn {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid var(--border-color);
-            padding: 1rem;
-            border-radius: 12px;
-            text-decoration: none;
-            color: var(--text-main);
-            font-weight: 600;
-            transition: all 0.2s ease;
-        }
-
-        .tool-btn:hover {
-            background: var(--accent-glow);
-            color: #ffffff;
-            border-color: transparent;
-            box-shadow: 0 5px 15px rgba(99, 102, 241, 0.4);
-            transform: scale(1.02);
-        }
-
-        .tool-icon {
-            font-size: 1.2rem;
-        }
-
-        /* Server endpoints list */
-        .server-endpoints {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 1.5rem;
-            margin-bottom: 3rem;
-        }
-
-        @media (max-width: 600px) {
-            .server-endpoints {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        .server-box {
+        .diagnostics-endpoints {
             background: rgba(255, 255, 255, 0.01);
             border: 1px solid var(--border-color);
             border-radius: 16px;
             padding: 1.5rem;
+            margin-top: 1.5rem;
         }
 
-        .server-box-title {
-            font-weight: 600;
-            font-size: 1.1rem;
-            margin-bottom: 1rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
+        .endpoints-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
         }
 
-        .link-row {
+        @media (max-width: 600px) {
+            .endpoints-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .endpoint-row {
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -354,34 +552,22 @@ if (preg_match('/nginx/i', $server_software)) {
             border-bottom: 1px solid rgba(255, 255, 255, 0.03);
         }
 
-        .link-row:last-child {
+        .endpoint-row:last-child {
             border-bottom: none;
         }
 
-        .endpoint-link {
-            color: #818cf8;
-            text-decoration: none;
-            font-weight: 600;
-            font-size: 0.95rem;
-        }
-
-        .endpoint-link:hover {
-            text-decoration: underline;
-            color: #a855f7;
-        }
-
-        /* Diagnostics & Debugging Box */
-        .debug-box {
-            background: rgba(99, 102, 241, 0.05);
-            border: 1px dashed rgba(99, 102, 241, 0.3);
-            border-radius: 16px;
-            padding: 2rem;
-        }
-
+        /* Debug Tab Styles */
         .debug-instructions {
-            margin-bottom: 1.5rem;
-            font-size: 0.95rem;
             line-height: 1.6;
+            margin-bottom: 2rem;
+        }
+
+        .debug-instructions ol {
+            margin-left: 1.5rem;
+            margin-top: 0.75rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.6rem;
         }
 
         .debug-instructions code {
@@ -391,6 +577,18 @@ if (preg_match('/nginx/i', $server_software)) {
             border-radius: 4px;
             font-family: monospace;
             font-size: 0.9rem;
+        }
+
+        .debug-tester-box {
+            background: rgba(99, 102, 241, 0.04);
+            border: 1px dashed rgba(99, 102, 241, 0.3);
+            border-radius: 16px;
+            padding: 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1.5rem;
         }
 
         .debug-status-pill {
@@ -423,10 +621,11 @@ if (preg_match('/nginx/i', $server_software)) {
         .btn-trigger:hover {
             box-shadow: 0 6px 15px rgba(99, 102, 241, 0.5);
             opacity: 0.95;
+            transform: scale(1.02);
         }
 
         .debug-output {
-            margin-top: 1rem;
+            margin-top: 1.5rem;
             padding: 1rem;
             background: rgba(0, 0, 0, 0.3);
             border-radius: 8px;
@@ -435,157 +634,244 @@ if (preg_match('/nginx/i', $server_software)) {
             color: #34d399;
             border: 1px solid rgba(52, 211, 153, 0.2);
         }
-
-        .db-err-box {
-            grid-column: 1 / -1;
-            background: rgba(239, 68, 68, 0.08);
-            border: 1px solid rgba(239, 68, 68, 0.3);
-            color: #fca5a5;
-            padding: 1rem;
-            border-radius: 8px;
-            font-size: 0.9rem;
-            font-family: monospace;
-        }
     </style>
 </head>
 <body>
 
-    <div class="dashboard-container">
+    <!-- 1. Top System Status Bar -->
+    <div class="system-top-bar">
+        <div class="sys-info-group">
+            <div class="sys-badge">🛡️ Web Server: <strong><?php echo htmlspecialchars($web_server_name); ?></strong></div>
+            <div class="sys-badge">⚡ PHP Version: <strong>v<?php echo htmlspecialchars($php_version); ?></strong></div>
+            <div class="sys-badge">🗃️ Database: <strong><?php echo htmlspecialchars($mariadb_version); ?></strong></div>
+        </div>
+        <div class="sys-badge">Protocol: <span style="font-weight: 700; color: <?php echo $is_https ? '#34d399' : '#fbbf24'; ?>;"><?php echo $protocol_label; ?></span></div>
+    </div>
+
+    <div class="main-wrapper">
         
-        <div class="header">
-            <h1>Environment Active</h1>
-            <p>Your ultra-modern, decoupled PHP local stack is ready to build awesome things.</p>
-            <div class="badges-wrapper">
-                <div class="badge-software">Served by: <?php echo htmlspecialchars($web_server_name); ?></div>
-                <div class="badge-protocol">Protocol: <?php echo $protocol_label; ?></div>
+        <!-- 2. Header Card -->
+        <div class="header-card">
+            <h1>Modern Developer Stack</h1>
+            <p>A fast, decoupled, microservices local suite tailored for modern web apps.</p>
+            
+            <div class="toolbar-group">
+                <a href="http://localhost:8804/" target="_blank" class="toolbar-btn">
+                    <span>📂 phpMyAdmin</span>
+                </a>
+                <a href="http://localhost:8805/" target="_blank" class="toolbar-btn">
+                    <span>✉️ Mailpit Panel</span>
+                </a>
+                <a href="?phpinfo=1" onclick="window.open('?phpinfo=true', 'PHPInfo', 'width=800,height=600'); return false;" class="toolbar-btn">
+                    <span>⚙️ phpinfo()</span>
+                </a>
             </div>
         </div>
 
-        <div class="section-title">Diagnostics & Services</div>
-        <div class="grid">
-            <!-- PHP Card -->
-            <div class="card">
-                <div class="card-title">PHP Version</div>
-                <div class="card-value">
-                    <span class="status-dot dot-active"></span>
-                    v<?php echo htmlspecialchars($php_version); ?>
+        <!-- 3. Tabs Header Navigation -->
+        <div class="tabs-header">
+            <button class="tab-trigger active" onclick="switchTab(event, 'tab-projects')">
+                📁 My Projects (<?php echo count($projects); ?>)
+            </button>
+            <button class="tab-trigger" onclick="switchTab(event, 'tab-diagnostics')">
+                ⚙️ Status & Diagnostics
+            </button>
+            <button class="tab-trigger" onclick="switchTab(event, 'tab-debug')">
+                🐛 Xdebug Guide
+            </button>
+        </div>
+
+        <!-- =================================================================== -->
+        <!-- TAB 1: Projects Navigator -->
+        <!-- =================================================================== -->
+        <div id="tab-projects" class="tab-content active">
+            <div class="section-card">
+                <h2 class="section-title">First-Level Directory Projects</h2>
+                <p style="color: var(--text-muted); margin-bottom: 2rem; font-size: 0.95rem; font-weight: 300;">
+                    Below are the subfolders dynamically scanned inside your local <code>src/</code> mount. Click any server button to open the project instantly.
+                </p>
+                
+                <div class="projects-grid">
+                    <?php if (empty($projects)): ?>
+                        <div class="no-projects">
+                            📁 No subprojects found inside <code>src/</code> yet.<br>
+                            <span style="font-size: 0.9rem; font-weight: 300; display: inline-block; margin-top: 0.5rem; color: #888;">
+                                Create directories (e.g. <code>src/my-web/</code>) or clone git repos to see them listed here instantly!
+                            </span>
+                        </div>
+                    <?php else: ?>
+                        <?php foreach ($projects as $project): ?>
+                            <div class="project-card">
+                                <div>
+                                    <div class="project-header">
+                                        <div class="project-icon-group">
+                                            <span class="project-folder-icon">📂</span>
+                                            <span class="project-name"><?php echo htmlspecialchars($project['name']); ?></span>
+                                        </div>
+                                        <div class="project-badges">
+                                            <?php if ($project['is_git']): ?>
+                                                <span class="badge-git">GIT</span>
+                                            <?php endif; ?>
+                                            <?php if ($project['has_vscode']): ?>
+                                                <span class="badge-vscode">VSCODE</span>
+                                            <?php endif; ?>
+                                        </div>
+                                    </div>
+                                    <div class="project-meta">Last modified: <?php echo htmlspecialchars($project['updated_time']); ?></div>
+                                </div>
+
+                                <div class="project-actions">
+                                    <a href="./<?php echo urlencode($project['name']); ?>/" class="proj-link proj-nginx" target="_blank">
+                                        ⚡ Nginx (8801)
+                                    </a>
+                                    <a href="http://localhost:8802/<?php echo urlencode($project['name']); ?>/" class="proj-link proj-apache" target="_blank">
+                                        🦅 Apache (8802)
+                                    </a>
+                                </div>
+                            </div>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
                 </div>
             </div>
+        </div>
 
-            <!-- Xdebug Card -->
-            <div class="card">
-                <div class="card-title">Xdebug Module</div>
-                <div class="card-value">
-                    <span class="status-dot <?php echo $xdebug_active ? 'dot-active' : 'dot-error'; ?>"></span>
-                    <?php echo $xdebug_active ? 'Active (' . htmlspecialchars($xdebug_mode) . ')' : 'Inactive'; ?>
-                </div>
-            </div>
-
-            <!-- MariaDB Card -->
-            <div class="card">
-                <div class="card-title">MariaDB Connections</div>
-                <div class="card-value" style="font-size: 0.95rem; flex-direction: column; align-items: flex-start; gap: 0.25rem;">
-                    <div>
-                        <span class="status-dot <?php echo $db_status_pdo === 'Connected successfully' ? 'dot-active' : 'dot-error'; ?>"></span>
-                        <strong>PDO:</strong> <?php echo htmlspecialchars($db_status_pdo); ?>
+        <!-- =================================================================== -->
+        <!-- TAB 2: Diagnostics & Status -->
+        <!-- =================================================================== -->
+        <div id="tab-diagnostics" class="tab-content">
+            <div class="section-card">
+                <h2 class="section-title">Environment Diagnostics</h2>
+                
+                <div class="diag-grid">
+                    <!-- PHP Version -->
+                    <div class="diag-card">
+                        <div class="diag-card-title">PHP Runtime</div>
+                        <div class="diag-card-value">
+                            <span class="status-dot dot-active"></span>
+                            PHP <?php echo htmlspecialchars($php_version); ?>
+                        </div>
                     </div>
-                    <div>
-                        <span class="status-dot <?php echo $db_status_mysqli === 'Connected successfully' ? 'dot-active' : 'dot-error'; ?>"></span>
-                        <strong>MySQLi:</strong> <?php echo htmlspecialchars($db_status_mysqli); ?>
+
+                    <!-- Xdebug Status -->
+                    <div class="diag-card">
+                        <div class="diag-card-title">Xdebug Engine</div>
+                        <div class="diag-card-value">
+                            <span class="status-dot <?php echo $xdebug_active ? 'dot-active' : 'dot-error'; ?>"></span>
+                            <?php echo $xdebug_active ? 'Active (' . htmlspecialchars($xdebug_mode) . ')' : 'Inactive'; ?>
+                        </div>
+                    </div>
+
+                    <!-- MariaDB Connection -->
+                    <div class="diag-card">
+                        <div class="diag-card-title">Database Connections</div>
+                        <div style="display: flex; flex-direction: column; gap: 0.4rem; font-size: 0.95rem; font-weight: 600;">
+                            <div>
+                                <span class="status-dot <?php echo $db_status_pdo === 'Connected successfully' ? 'dot-active' : 'dot-error'; ?>"></span>
+                                PDO Link: <?php echo htmlspecialchars($db_status_pdo); ?>
+                            </div>
+                            <div>
+                                <span class="status-dot <?php echo $db_status_mysqli === 'Connected successfully' ? 'dot-active' : 'dot-error'; ?>"></span>
+                                MySQLi Link: <?php echo htmlspecialchars($db_status_mysqli); ?>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <?php if (!empty($db_error)): ?>
+                    <div class="db-err-box" style="margin-bottom: 2rem;">
+                        🚨 <strong>Database connection reports:</strong><br>
+                        <?php echo htmlspecialchars($db_error); ?>
+                    </div>
+                <?php endif; ?>
+
+                <h3 class="section-title" style="font-size: 1.15rem; margin-top: 2rem;">Address Mapping</h3>
+                <div class="diagnostics-endpoints">
+                    <div class="endpoints-grid">
+                        <div>
+                            <h4 style="margin-bottom: 0.5rem; font-size: 0.95rem; color: #818cf8;">⚡ Nginx Local Ports</h4>
+                            <div class="endpoint-row">
+                                <span>HTTP standard</span>
+                                <a href="http://localhost:8801/" target="_blank" style="color: #34d399; font-weight: 600; text-decoration: none;">http://localhost:8801</a>
+                            </div>
+                            <div class="endpoint-row">
+                                <span>HTTPS secure</span>
+                                <a href="https://localhost:8811/" target="_blank" style="color: #34d399; font-weight: 600; text-decoration: none;">https://localhost:8811</a>
+                            </div>
+                        </div>
+                        <div>
+                            <h4 style="margin-bottom: 0.5rem; font-size: 0.95rem; color: #fbbf24;">🦅 Apache Local Ports</h4>
+                            <div class="endpoint-row">
+                                <span>HTTP standard</span>
+                                <a href="http://localhost:8802/" target="_blank" style="color: #fbbf24; font-weight: 600; text-decoration: none;">http://localhost:8802</a>
+                            </div>
+                            <div class="endpoint-row">
+                                <span>HTTPS secure</span>
+                                <a href="https://localhost:8812/" target="_blank" style="color: #fbbf24; font-weight: 600; text-decoration: none;">https://localhost:8812</a>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
-
-            <?php if (!empty($db_error)): ?>
-                <div class="db-err-box">
-                    🚨 <strong>Database connection details:</strong><br>
-                    <?php echo htmlspecialchars($db_error); ?>
-                </div>
-            <?php endif; ?>
         </div>
 
-        <div class="section-title">Active Server Endpoints</div>
-        <div class="server-endpoints">
-            <!-- Nginx -->
-            <div class="server-box">
-                <div class="server-box-title">⚡ Nginx Server</div>
-                <div class="link-row">
-                    <span>Standard (HTTP)</span>
-                    <a href="http://localhost:8801/" class="endpoint-link" target="_blank">http://localhost:8801</a>
+        <!-- =================================================================== -->
+        <!-- TAB 3: Debug Guide -->
+        <!-- =================================================================== -->
+        <div id="tab-debug" class="tab-content">
+            <div class="section-card">
+                <h2 class="section-title">VS Code Xdebug Step-by-Step Testing</h2>
+                
+                <div class="debug-instructions">
+                    <p>To verify that live, interactive debugging is fully operational:</p>
+                    <ol>
+                        <li>Ensure you have the <strong>PHP Debug</strong> extension installed in VS Code.</li>
+                        <li>Open the specific project subfolder in VS Code (e.g. <code>src/prueba-debug</code>).</li>
+                        <li>Open its <code>index.php</code> and set a breakpoint on the executable lines (e.g. line 16).</li>
+                        <li>Press <kbd>F5</kbd> (and select the corresponding <strong>"Listen for Xdebug (prueba-debug)"</strong> profile).</li>
+                        <li>Click the trigger button below to run the test script. VS Code should instantly pause execution!</li>
+                    </ol>
                 </div>
-                <div class="link-row">
-                    <span>Secure (HTTPS) 🔒</span>
-                    <a href="https://localhost:8811/" class="endpoint-link" target="_blank">https://localhost:8811</a>
+
+                <div class="debug-tester-box">
+                    <div>
+                        <div>Xdebug Status:</div>
+                        <span class="debug-status-pill <?php echo $xdebug_active ? 'pill-active' : 'pill-inactive'; ?>">
+                            <?php echo $xdebug_active ? '✅ Ready to debug' : '❌ Extension not loaded'; ?>
+                        </span>
+                    </div>
+                    <a href="?debug=1" class="btn-trigger">⚡ Trigger Breakpoint Test</a>
                 </div>
+
+                <?php if ($debug_triggered): ?>
+                    <div class="debug-output">
+                        🎉 Breakpoint check executed! If VS Code was listening, it paused here. Variable $test_variable contents: "<?php echo htmlspecialchars($test_variable); ?>"
+                    </div>
+                <?php endif; ?>
             </div>
-
-            <!-- Apache -->
-            <div class="server-box">
-                <div class="server-box-title">🦅 Apache Server</div>
-                <div class="link-row">
-                    <span>Standard (HTTP)</span>
-                    <a href="http://localhost:8802/" class="endpoint-link" target="_blank">http://localhost:8802</a>
-                </div>
-                <div class="link-row">
-                    <span>Secure (HTTPS) 🔒</span>
-                    <a href="https://localhost:8812/" class="endpoint-link" target="_blank">https://localhost:8812</a>
-                </div>
-            </div>
-        </div>
-
-        <div class="section-title">Developer Tooling</div>
-        <ul class="tools-list">
-            <li>
-                <a href="http://localhost:8804/" target="_blank" class="tool-btn">
-                    <span>Database (phpMyAdmin)</span>
-                    <span class="tool-icon">📂</span>
-                </a>
-            </li>
-            <li>
-                <a href="http://localhost:8805/" target="_blank" class="tool-btn">
-                    <span>Mail Capture (Mailpit)</span>
-                    <span class="tool-icon">✉️</span>
-                </a>
-            </li>
-            <li>
-                <a href="?phpinfo=1" onclick="window.open('?phpinfo=true', 'PHPInfo', 'width=800,height=600'); return false;" class="tool-btn">
-                    <span>PHP Settings (phpinfo)</span>
-                    <span class="tool-icon">⚙️</span>
-                </a>
-            </li>
-        </ul>
-
-        <div class="section-title">VS Code Xdebug Step-by-Step Testing</div>
-        <div class="debug-box">
-            <div class="debug-instructions">
-                <p>To verify that live, interactive debugging is fully operational:</p>
-                <ol style="margin-left: 1.5rem; margin-top: 0.5rem; display: flex; flex-direction: column; gap: 0.4rem;">
-                    <li>Ensure you have the <strong>PHP Debug</strong> extension installed in VS Code.</li>
-                    <li>Open this project workspace in VS Code.</li>
-                    <li>Open <code>src/index.php</code> and set a breakpoint on <strong>line 54</strong> (inside the conditional <code>$debug_triggered</code> check).</li>
-                    <li>Press <kbd>F5</kbd> (or go to Run & Debug and click <strong>"Listen for Xdebug (Docker)"</strong>).</li>
-                    <li>Click the button below to trigger the script. VS Code should instantly pause execution on line 54!</li>
-                </ol>
-            </div>
-
-            <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
-                <div>
-                    <div>Xdebug status:</div>
-                    <span class="debug-status-pill <?php echo $xdebug_active ? 'pill-active' : 'pill-inactive'; ?>">
-                        <?php echo $xdebug_active ? '✅ Ready to debug' : '❌ Extension not loaded'; ?>
-                    </span>
-                </div>
-                <a href="?debug=1" class="btn-trigger">⚡ Trigger Breakpoint Test</a>
-            </div>
-
-            <?php if ($debug_triggered): ?>
-                <div class="debug-output">
-                    🎉 Breakpoint check executed! If VS Code was listening, it paused here. Variable $test_variable contents: "<?php echo htmlspecialchars($test_variable); ?>"
-                </div>
-            <?php endif; ?>
         </div>
 
     </div>
+
+    <!-- JavaScript Tab Switcher -->
+    <script>
+        function switchTab(evt, tabId) {
+            // Hide all tab contents
+            const tabContents = document.getElementsByClassName("tab-content");
+            for (let i = 0; i < tabContents.length; i++) {
+                tabContents[i].classList.remove("active");
+            }
+
+            // Remove active class from all tab triggers
+            const tabTriggers = document.getElementsByClassName("tab-trigger");
+            for (let i = 0; i < tabTriggers.length; i++) {
+                tabTriggers[i].classList.remove("active");
+            }
+
+            // Show active tab content and add active class to trigger button
+            document.getElementById(tabId).classList.add("active");
+            evt.currentTarget.classList.add("active");
+        }
+    </script>
 
     <?php
     // Inline phpinfo overlay handler
