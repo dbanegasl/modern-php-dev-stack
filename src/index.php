@@ -429,20 +429,17 @@ if (is_dir($dir)) {
         }
 
         /* Compact Action Pills */
-        .launch-group {
-            display: flex;
-            gap: 0.4rem;
-        }
-
         .launch-pill {
             display: inline-flex;
             align-items: center;
+            justify-content: center;
             gap: 0.3rem;
             font-size: 0.75rem;
             font-weight: 600;
-            padding: 0.3rem 0.6rem;
+            padding: 0.3rem 0.65rem;
             border-radius: 6px;
             text-decoration: none;
+            width: 80px;
             transition: all 0.2s ease;
         }
 
@@ -729,7 +726,8 @@ if (is_dir($dir)) {
                                     <th>Name</th>
                                     <th>Tags</th>
                                     <th>Last Modified</th>
-                                    <th style="width: 170px;">Servers</th>
+                                    <th style="width: 100px; text-align: center;">Nginx (8801)</th>
+                                    <th style="width: 100px; text-align: center;">Apache (8802)</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -754,15 +752,15 @@ if (is_dir($dir)) {
                                         <td>
                                             <span class="finder-date"><?php echo htmlspecialchars($project['updated_time']); ?></span>
                                         </td>
-                                        <td>
-                                            <div class="launch-group">
-                                                <a href="./<?php echo urlencode($project['name']); ?>/" class="launch-pill launch-nginx" target="_blank" title="Open with Nginx">
-                                                    ⚡ Nginx
-                                                </a>
-                                                <a href="http://localhost:8802/<?php echo urlencode($project['name']); ?>/" class="launch-pill launch-apache" target="_blank" title="Open with Apache">
-                                                    🦅 Apache
-                                                </a>
-                                            </div>
+                                        <td style="text-align: center;">
+                                            <a href="./<?php echo urlencode($project['name']); ?>/" class="launch-pill launch-nginx" target="_blank" title="Open with Nginx HTTP (Port 8801)">
+                                                ⚡ Open
+                                            </a>
+                                        </td>
+                                        <td style="text-align: center;">
+                                            <a href="http://localhost:8802/<?php echo urlencode($project['name']); ?>/" class="launch-pill launch-apache" target="_blank" title="Open with Apache HTTP (Port 8802)">
+                                                🦅 Open
+                                            </a>
                                         </td>
                                     </tr>
                                 <?php endforeach; ?>
