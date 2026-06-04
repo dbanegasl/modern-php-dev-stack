@@ -16,6 +16,8 @@ services:
     volumes:
       - ./src:/var/www/html
     environment:
+      # Timezone configuration
+      TZ: ${TIMEZONE}
       # Inject database parameters
       DB_HOST: db
       DB_DATABASE: ${MARIADB_DATABASE}
@@ -36,6 +38,9 @@ services:
     image: nginx:alpine
     container_name: modern-nginx
     restart: always
+    environment:
+      # Timezone configuration
+      TZ: ${TIMEZONE}
     ports:
       - "${PORT_NGINX}:80"
       - "${PORT_NGINX_HTTPS}:443"
@@ -55,6 +60,9 @@ services:
     image: httpd:2.4-alpine
     container_name: modern-apache
     restart: always
+    environment:
+      # Timezone configuration
+      TZ: ${TIMEZONE}
     ports:
       - "${PORT_APACHE}:80"
       - "${PORT_APACHE_HTTPS}:443"
@@ -77,15 +85,21 @@ services:
     ports:
       - "${PORT_MARIADB}:3306"
     environment:
+      # Timezone configuration
+      TZ: ${TIMEZONE}
       # Read credentials securely from mounted Docker Secrets
       MARIADB_ROOT_PASSWORD_FILE: /run/secrets/db_root_password
       MARIADB_DATABASE: ${MARIADB_DATABASE}
       MARIADB_USER: ${MARIADB_USER}
       MARIADB_PASSWORD_FILE: /run/secrets/db_password
+      # Charset and Collation configuration
+      MARIADB_CHARSET: utf8mb4
+      MARIADB_COLLATE: utf8mb4_unicode_ci
     secrets:
       - db_root_password
       - db_password
     volumes:
+      - ./docker/mariadb/my.cnf:/etc/mysql/conf.d/my.cnf:ro
       - db-data:/var/lib/mysql
     networks:
       - app-net
@@ -100,6 +114,8 @@ services:
     ports:
       - "${PORT_PHPMYADMIN}:80"
     environment:
+      # Timezone configuration
+      TZ: ${TIMEZONE}
       PMA_HOST: db
       PMA_PORT: 3306
       PMA_USER: ${MARIADB_USER}
@@ -118,6 +134,9 @@ services:
     image: axllent/mailpit:latest
     container_name: modern-mailpit
     restart: always
+    environment:
+      # Timezone configuration
+      TZ: ${TIMEZONE}
     ports:
       - "${PORT_MAILPIT}:8025"      # Web interface
       - "${PORT_MAILPIT_SMTP}:1025"  # SMTP Port
@@ -131,6 +150,9 @@ services:
     image: node:20-alpine
     container_name: modern-node
     restart: always
+    environment:
+      # Timezone configuration
+      TZ: ${TIMEZONE}
     working_dir: /var/www/html
     volumes:
       - ./src:/var/www/html
