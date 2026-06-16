@@ -20,3 +20,6 @@ xampp8-docker-ref/
 src/*
 !src/.gitkeep
 !src/index.php
+
+# Ignore temp folder
+temp/

@@ -18,11 +18,6 @@ services:
     environment:
       # Timezone configuration
       TZ: ${TIMEZONE}
-      # Inject database parameters
-      DB_HOST: db
-      DB_DATABASE: ${MARIADB_DATABASE}
-      DB_USER: ${MARIADB_USER}
-      DB_PASSWORD_FILE: /run/secrets/db_password
       XDEBUG_MODE: ${XDEBUG_MODE}
     secrets:
       - db_password
