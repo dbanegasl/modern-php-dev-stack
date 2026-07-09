@@ -26,6 +26,7 @@ RUN chmod +x /usr/local/bin/install-php-extensions && \
 # Copy custom configurations
 COPY php.ini /usr/local/etc/php/conf.d/99-custom.ini
 COPY xdebug.ini /usr/local/etc/php/conf.d/99-xdebug.ini
+COPY fpm-pool.conf /usr/local/etc/php-fpm.d/zz-pool-overrides.conf
 
 # Use the default development configuration as base
 RUN cp "$PHP_INI_DIR/php.ini-development" "$PHP_INI_DIR/php.ini"
