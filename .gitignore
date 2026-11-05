@@ -29,3 +29,7 @@ docker/nginx/conf.d/*
 !docker/nginx/conf.d/*.example
 docker/apache/conf.d/*
 !docker/apache/conf.d/*.example
+
+# Self-signed dev certificates: generate with `sh docker/ssl/generate.sh`
+docker/ssl/*.crt
+docker/ssl/*.key

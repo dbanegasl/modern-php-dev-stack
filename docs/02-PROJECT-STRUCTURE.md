@@ -57,8 +57,9 @@ modernPhpDevStack/
 │   ├── mariadb/
 │   │   └── my.cnf               # Configuración MariaDB (charset, collation)
 │   └── ssl/
-│       ├── server.crt           # Certificado SSL (NO COMMITEAR)
-│       └── server.key           # Clave privada SSL (NO COMMITEAR)
+│       ├── generate.sh          # Genera el certificado de desarrollo
+│       ├── server.crt           # Certificado SSL (generado, NO COMMITEAR)
+│       └── server.key           # Clave privada SSL (generada, NO COMMITEAR)
 │
 ├── .secrets/                     # 🔐 SECRETOS (NO COMMITEAR)
 │   ├── db_password.txt          # Contraseña usuario BD
@@ -153,8 +154,9 @@ Contiene las configuraciones de cada servicio:
 - Performance settings
 
 #### `docker/ssl/`
-- Certificados self-signed para HTTPS
-- NO commitear (aunque están en .gitignore)
+- Certificados self-signed para HTTPS (`server.crt` / `server.key`), **ignorados por git**
+- Se generan con `sh docker/ssl/generate.sh` (acepta IPs/hosts extra: `sh docker/ssl/generate.sh 192.168.1.50`)
+- `generate.sh` es lo único de esta carpeta que se versiona
 
 ---
 

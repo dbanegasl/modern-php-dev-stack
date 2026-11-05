@@ -47,7 +47,20 @@ ls -la docker/ssl/
 # - server.key
 ```
 
-**Si falta alguno**, cópialos del `.env.example` o regénéralos según necesites.
+**Si falta alguno** (en un clone nuevo faltan los tres, están en `.gitignore`):
+
+```bash
+cp .env.example .env                                   # variables de entorno
+
+mkdir -p .secrets                                      # contraseñas de BD
+openssl rand -hex 10 > .secrets/db_root_password.txt
+openssl rand -hex 10 > .secrets/db_password.txt
+
+sh docker/ssl/generate.sh                              # certificado HTTPS autofirmado
+# Acceso desde otra máquina: añade su IP/host como SAN, ej.
+#   sh docker/ssl/generate.sh 192.168.1.50
+# Sin certificado, Nginx y Apache no arrancan.
+```
 
 ---
 
@@ -76,7 +89,7 @@ xxxxx          httpd:2.4-alpine         Up 2 seconds
 xxxxx          mariadb:11.5             Up 2 seconds
 xxxxx          phpmyadmin:latest        Up 2 seconds
 xxxxx          axllent/mailpit:latest   Up 2 seconds
-xxxxx          node:20-alpine           Up 2 seconds
+xxxxx          node:22-alpine           Up 2 seconds
 ```
 
 ---
