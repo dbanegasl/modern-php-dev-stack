@@ -144,7 +144,7 @@ services:
   # Node.js Service (For compiling frontend assets: Vite, Webpack, npm, etc.)
   # ----------------------------------------------------------------------------
   node:
-    image: node:20-alpine
+    image: node:22-alpine
     container_name: modern-node
     restart: always
     environment:
@@ -155,6 +155,7 @@ services:
       - ./src:/var/www/html
     ports:
       - "5173:5173"                 # Exposes Vite's hot-reload dev server
+      - "4321:4321"                 # Astro dev/preview server
     command: "tail -f /dev/null"    # Keeps the container running in the background
     networks:
       - app-net
