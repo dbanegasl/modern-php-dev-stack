@@ -21,6 +21,7 @@ RUN chmod +x /usr/local/bin/install-php-extensions && \
     pdo_mysql \
     mysqli \
     xdebug \
+    bcmath \
     @composer
 
 # Copy custom configurations
