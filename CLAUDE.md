@@ -8,7 +8,7 @@ A decoupled Docker-based local development stack (a modern replacement for XAMPP
 
 ## Architecture
 
-One central **PHP 8.3 FPM** container (Alpine, with gd/zip/intl/opcache/apcu/pdo_mysql/mysqli/xdebug + Composer) is fronted by **two concurrent web servers** — Nginx and Apache — both serving the same `./src` mount at `/var/www/html` over HTTP and HTTPS (self-signed certs in `docker/ssl/`, gitignored). Supporting services: MariaDB 11.5, phpMyAdmin, Mailpit (mail catcher), and a Node 20 container for frontend asset builds. All containers share the `modern-xampp-net` bridge network and the `America/Guayaquil` timezone.
+One central **PHP 8.3 FPM** container (Alpine, with gd/zip/intl/opcache/apcu/pdo_mysql/mysqli/xdebug + Composer) is fronted by **two concurrent web servers** — Nginx and Apache — both serving the same `./src` mount at `/var/www/html` over HTTP and HTTPS (self-signed certs in `docker/ssl/`, gitignored — generate with `sh docker/ssl/generate.sh [extra IPs/hosts]`; Nginx/Apache will not start without them). Supporting services: MariaDB 11.5, phpMyAdmin, Mailpit (mail catcher), and a Node 22 container for frontend asset builds. All containers share the `modern-xampp-net` bridge network and the `America/Guayaquil` timezone.
 
 | Service | Host port(s) | Notes |
 |---|---|---|
