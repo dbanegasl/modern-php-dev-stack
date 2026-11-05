@@ -119,6 +119,17 @@ Soluciones a problemas comunes y cómo depurar issues.
 
 ---
 
+### 🏥 [Alta de un cliente MediABC](./11-MEDIABC-ALTA-CLIENTE.md)
+Instalación de `mediabc-app` como cliente nuevo sobre la stack, validada en un servidor limpio.
+
+**Temas:**
+- Clone, Composer y `.env` de la app
+- Permisos (el `.env` debe ser de `www-data`)
+- Instalador web y verificación
+- Incidente conocido y cómo recuperarse
+
+---
+
 ## 🎯 Mapa Rápido de Accesos
 
 | Servicio | URL | Puerto | Usuario |
