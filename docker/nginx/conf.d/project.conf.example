@@ -1,0 +1,44 @@
+# ==============================================================================
+# Reglas Nginx por proyecto — plantilla de referencia.
+#
+# Uso: copiar a <proyecto>.conf (ignorado por git) y adaptar.
+# Cada archivo *.conf de esta carpeta se inyecta con `include` dentro de los
+# bloques server HTTP y HTTPS de default.conf, ANTES de la location PHP general.
+# Por eso solo se escriben bloques `location` (o directivas válidas en `server`).
+#
+# Aplicar cambios (sin recrear contenedores):
+#   docker compose exec nginx nginx -t && docker compose exec nginx nginx -s reload
+#
+# REGLA DE ORO: Nginx usa la PRIMERA location regex (~ / ~*) que coincide, en
+# orden de aparición. Como estos includes van antes de `location ~ \.php$`, un
+# deny aquí gana sobre PHP. Una location de prefijo normal (ej. /app) pierde
+# frente a cualquier regex; usa `^~` para que gane.
+# ==============================================================================
+
+# 1) Bloquear PHP en un directorio de uploads (regex, gana sobre la location PHP)
+# location ~* ^/mi-proyecto/uploads/.*\.php$ {
+#     deny all;
+#     return 404;
+# }
+
+# 2) Directorios privados que nunca deben servirse por HTTP
+# location ~* ^/mi-proyecto/(logs|vendor|config|node_modules)/ {
+#     deny all;
+#     return 404;
+# }
+
+# 3) Archivos de build/metadatos de un proyecto concreto
+# location ~* ^/mi-proyecto/(composer\.(json|lock)|package(-lock)?\.json)$ {
+#     deny all;
+#     return 404;
+# }
+
+# 4) SPA: todo lo que no sea archivo real cae en el index del proyecto
+# location ^~ /mi-spa/ {
+#     try_files $uri $uri/ /mi-spa/index.html;
+# }
+
+# 5) Proyecto con front controller PHP propio (ej. /home -> /home/index.php)
+# location ^~ /mi-app/ {
+#     try_files $uri $uri/ /mi-app/index.php?$query_string;
+# }

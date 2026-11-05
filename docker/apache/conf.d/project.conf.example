@@ -1,0 +1,10 @@
+# ==============================================================================
+# Reglas Apache por proyecto. Copiar a <proyecto>.conf (ignorado por git).
+# Se inyecta (IncludeOptional) dentro de los VirtualHost HTTP y HTTPS.
+# Aplicar cambios: docker compose exec apache httpd -t && docker compose restart apache
+# ==============================================================================
+
+# Ejemplo: bloquear directorios privados de un proyecto
+# <DirectoryMatch "^/var/www/html/mi-proyecto/(logs|vendor|config)/">
+#     Require all denied
+# </DirectoryMatch>

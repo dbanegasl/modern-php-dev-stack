@@ -23,3 +23,9 @@ src/*
 
 # Ignore temp folder
 temp/
+
+# Per-project web server rules: only the *.example templates are versioned
+docker/nginx/conf.d/*
+!docker/nginx/conf.d/*.example
+docker/apache/conf.d/*
+!docker/apache/conf.d/*.example
