@@ -131,7 +131,8 @@ Soluciones a problemas comunes y cómo depurar issues.
 | **phpMyAdmin** | http://localhost:8804 | 8804 | duotics / (contraseña) |
 | **Mailpit Web** | http://localhost:8805 | 8805 | - |
 | **Mailpit SMTP** | localhost:8825 | 8825 | - |
-| **Vite HMR** | localhost:5173 | 5173 | - |
+| **Vite HMR** | http://localhost:8831 | 8831 (→ 5173) | - |
+| **Astro dev** | http://localhost:8832 | 8832 (→ 4321) | - |
 
 ---
 

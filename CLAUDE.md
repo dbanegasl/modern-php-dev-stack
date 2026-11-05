@@ -17,7 +17,7 @@ One central **PHP 8.3 FPM** container (Alpine, with gd/zip/intl/opcache/apcu/pdo
 | MariaDB | 8803 | Hostname `db` (port 3306) from inside the network; utf8mb4/utf8mb4_unicode_ci |
 | phpMyAdmin | 8804 | |
 | Mailpit | 8805 UI, 8825 SMTP | PHP sends mail to `mailpit:1025` inside the network |
-| Node/Vite | 5173 | Container idles (`tail -f`); run commands via `docker compose exec node` |
+| Node/Vite | 8831 → 5173 | Container idles (`tail -f`); run commands via `docker compose exec node` |
 
 Port mappings and PHP version live in `.env` (gitignored; template in `.env.example`). A project is reachable at `http://localhost:8801/<dirname>/` (or any of the other three web endpoints).
 
@@ -57,7 +57,7 @@ docker compose exec php php somefile.php
 
 # Node / npm (node container, same working dir):
 docker compose exec node npm install
-docker compose exec node npm run dev     # Vite dev server, already exposed on 5173
+docker compose exec node npm run dev     # Vite dev server, exposed on host 8831 (PORT_VITE); Astro on 8832 (PORT_ASTRO)
 docker compose exec node npm run build
 ```
 

@@ -71,7 +71,7 @@ graph TD
 *   🐛 **Pre-configured Xdebug 3**: Fully configured to trace code executions back to your VS Code session at port `9003` via host loopback.
 *   📬 **Integrated Mail Catcher (Mailpit)**: SMTP is mapped on `8825` and the visual browser interface is on `8805`.
 *   📂 **phpMyAdmin Database Tool**: Visual database admin console active on port `8804`.
-*   🟢 **Node.js LTS (Asset Builder)**: Independent `node:22-alpine` service with port `5173` mapped for **Vite** hot-reload (HMR) to compile modern JS/CSS.
+*   🟢 **Node.js LTS (Asset Builder)**: Independent `node:22-alpine` service with port `5173` (host `8831` via `PORT_VITE`) mapped for **Vite** hot-reload (HMR) to compile modern JS/CSS.
 
 ---
 
@@ -146,7 +146,7 @@ Since the `src/` folder is mounted in the container at `/var/www/html`, you can 
     ```bash
     docker compose exec node npm run dev
     ```
-    *(Vite will serve assets on port `5173`, which is already exposed to your host machine!)*
+    *(Vite listens on `5173` inside the container and is exposed on host port `8831` — `http://localhost:8831`. Astro: container `4321` → host `8832`. Both configurable via `PORT_VITE` / `PORT_ASTRO` in `.env`.)*
 *   **Compile production assets**:
     ```bash
     docker compose exec node npm run build

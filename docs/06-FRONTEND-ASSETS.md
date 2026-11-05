@@ -13,7 +13,7 @@ El stack incluye un contenedor Node.js para:
 - Usar Tailwind CSS, PostCSS, etc.
 - Hot Module Replacement (HMR) en desarrollo
 
-**Puerto**: 5173 (Vite dev server)
+**Puerto**: `8831` en el host (`PORT_VITE` en `.env`) → `5173` dentro del contenedor (Vite). Astro: `8832` (`PORT_ASTRO`) → `4321`.
 
 ---
 
@@ -51,7 +51,7 @@ Instala las dependencias de `src/package.json` en el contenedor.
 docker compose exec node npm run dev
 ```
 
-Inicia servidor de desarrollo en `http://localhost:5173`
+Inicia servidor de desarrollo en `http://localhost:8831` (puerto del host; Vite escucha en 5173 dentro del contenedor)
 
 ### Compilar para Producción
 
@@ -144,10 +144,10 @@ import { defineConfig } from 'vite'
 export default defineConfig({
   server: {
     host: '0.0.0.0',
-    port: 5173,
+    port: 5173,            // puerto DENTRO del contenedor
     hmr: {
       host: 'localhost',
-      port: 5173
+      clientPort: 8831     // puerto del HOST (PORT_VITE) al que se conecta el navegador
     }
   }
 })
@@ -159,11 +159,11 @@ export default defineConfig({
 <!DOCTYPE html>
 <html>
 <head>
-    <link rel="stylesheet" href="http://localhost:5173/src/main.css">
+    <link rel="stylesheet" href="http://localhost:8831/src/main.css">
 </head>
 <body>
     <h1>Mi App</h1>
-    <script type="module" src="http://localhost:5173/src/main.js"></script>
+    <script type="module" src="http://localhost:8831/src/main.js"></script>
 </body>
 </html>
 ```
@@ -201,8 +201,8 @@ Si usas Vite con HMR:
 ```php
 <?php if (getenv('APP_ENV') === 'development'): ?>
     <!-- Dev: Hot reload habilitado -->
-    <script type="module" src="http://localhost:5173/src/main.js"></script>
-    <link rel="stylesheet" href="http://localhost:5173/src/main.css">
+    <script type="module" src="http://localhost:8831/src/main.js"></script>
+    <link rel="stylesheet" href="http://localhost:8831/src/main.css">
 <?php else: ?>
     <!-- Producción: Assets compilados -->
     <link rel="stylesheet" href="/public/css/main.css">
@@ -227,7 +227,7 @@ docker compose exec node sh
 ### Problema: Dev server no responde
 
 ```bash
-# Verifica puerto 5173
+# Verifica puerto 8831 (host) / 5173 (contenedor)
 docker compose logs node
 
 # Reinicia
@@ -238,7 +238,7 @@ docker compose restart node
 
 1. Verifica `vite.config.js`
 2. Recarga página manualmente
-3. Verifica que localhost:5173 sea accesible
+3. Verifica que localhost:8831 sea accesible (y `hmr.clientPort` = 8831)
 
 ---
 

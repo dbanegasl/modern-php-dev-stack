@@ -154,8 +154,8 @@ services:
     volumes:
       - ./src:/var/www/html
     ports:
-      - "5173:5173"                 # Exposes Vite's hot-reload dev server
-      - "4321:4321"                 # Astro dev/preview server
+      - "${PORT_VITE:-5173}:5173"   # Vite dev server (hot-reload); container port stays 5173
+      - "${PORT_ASTRO:-4321}:4321"  # Astro dev/preview server; container port stays 4321
     command: "tail -f /dev/null"    # Keeps the container running in the background
     networks:
       - app-net
